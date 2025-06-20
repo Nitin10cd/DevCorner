@@ -1,5 +1,5 @@
 import Providers from "./providers"; // path to the above client component
-
+import "./globals.css";
 export default function RootLayout({
   children,
 }: {
