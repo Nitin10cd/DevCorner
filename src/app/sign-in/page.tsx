@@ -36,6 +36,7 @@ export default function SignIn() {
     const res = await signIn("credentials", {
       redirect: false,
       ...values,
+      callbackUrl: "/post-login",
     });
 
     if (res?.ok) router.push("/");
@@ -81,7 +82,7 @@ export default function SignIn() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => signIn("google")}
+            onClick={() => signIn("google", {callbackUrl: "/post-login"})}
             className="w-full"
           >
             Sign in with Google

@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
             },
             authorize: async (
                 credentials
-            ): Promise<{ id: string; name: string | null; email: string } | null> => {
+            ): Promise<{ id: string; name: string | null; email: string; role: string } | null> => {
                 if (!credentials?.email || !credentials?.password) return null;
 
                 const existingUser = await db.user.findUnique({
@@ -36,6 +36,7 @@ export const authOptions: NextAuthOptions = {
                     id: `${existingUser.id}`,
                     name: existingUser.name,
                     email: existingUser.email,
+                    role: existingUser.role,
                 };
             }
 
@@ -49,20 +50,38 @@ export const authOptions: NextAuthOptions = {
         signIn: "/sign-in",
     },
     callbacks: {
+        async jwt({ token, user }) {
+            if (user) {
+                token.name = user.name;
+                token.role = (user as any).role ?? "USER";
+            } else if (!token.role) {
+                const dbUser = await db.user.findUnique({
+                    where: { email: token.email! },
+                });
+
+                token.role = dbUser?.role ?? "USER";
+            }
+
+            return token;
+        },
+
         async session({ session, token }) {
             return {
                 ...session,
                 user: {
                     ...session.user,
                     name: token.name,
+                    role: token.role,
                 },
             };
         },
-        async jwt({ token, user }) {
-            if (user) {
-                token.name = user.name;
-            }
-            return token;
-        },
     },
+    events: {
+        async createUser({ user }) {
+            await db.user.update({
+                where: { id: user.id },
+                data: { role: "USER" },
+            });
+        },
+    }
 };
