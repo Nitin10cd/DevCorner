@@ -39,7 +39,7 @@ export default function SignIn() {
       callbackUrl: "/post-login",
     });
 
-    if (res?.ok) router.push("/");
+    if (res?.ok) router.push("/post-login");
     else alert("Invalid credentials");
   };
 
