@@ -2,19 +2,17 @@
 import { createContext, useContext, useState, ReactNode } from "react"
 
 type SidebarContextType = {
-  isOpen: boolean
-  toggleSidebar: () => void
+  activeState: string
+  setActiveState: (state: string) => void
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
-export const SidebarProvider = ({ children }: { children: ReactNode }) => {
-  const [isOpen, setIsOpen] = useState(true)
-
-  const toggleSidebar = () => setIsOpen((prev) => !prev)
+export const SidebarProviderContext = ({ children }: { children: ReactNode }) => {
+  const [activeState, setActiveState] = useState("Home")
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggleSidebar }}>
+    <SidebarContext.Provider value={{ activeState, setActiveState }}>
       {children}
     </SidebarContext.Provider>
   )

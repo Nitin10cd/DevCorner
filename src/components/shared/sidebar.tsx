@@ -1,7 +1,6 @@
 "use client"
-
+import { useSidebar } from "@/context/SidebarContext"
 import {
-  Calendar,
   Home,
   Inbox,
   Search,
@@ -14,7 +13,6 @@ import {
   FileText,
 } from "lucide-react"
 
-import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   DropdownMenu,
@@ -46,7 +44,14 @@ const items = [
 ]
 
 export function AppSidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  // context values
+  const {activeState , setActiveState} = useSidebar();
+
+  const changeState = (prop:string) => {
+    setActiveState(prop);
+    console.log("Active State: ", activeState)
+  }
 
   return (
     <Sidebar className="bg-gradient-to-b from-white to-gray-50 border-r border-gray-200 text-gray-900 shadow-sm">
@@ -63,8 +68,7 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <Link
-                        href={item.url}
+                      <p onClick={() => changeState(item.title)}
                         className={`flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-200 text-base font-semibold ${
                           isActive
                             ? "bg-blue-100 text-blue-700"
@@ -73,7 +77,7 @@ export function AppSidebar() {
                       >
                         <item.icon className="w-6 h-6" />
                         <span>{item.title}</span>
-                      </Link>
+                      </p>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
