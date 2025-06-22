@@ -11,6 +11,7 @@ import {
   BellIcon,
   Users as GroupIcon,
   FileText,
+  User2Icon,
 } from "lucide-react"
 
 import { usePathname } from "next/navigation"
@@ -34,6 +35,7 @@ import {
 
 const items = [
   { title: "Home", url: "/user-dashboard/home", icon: Home },
+  { title: "Profile", url: "/user-dashboard/home", icon: User2Icon },
   { title: "Messages", url: "/user-dashboard/inbox", icon: Inbox },
   { title: "Jobs", url: "/user-dashboard/search", icon: Search },
   { title: "Blogs", url: "/user-dashboard/blogs", icon: FileText },
@@ -58,7 +60,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-gray-500 font-semibold text-md px-6 pt-6 pb-2">
-            Carrer Options
+            ByteBoard
           </SidebarGroupLabel>
           <br />
           <SidebarGroupContent>

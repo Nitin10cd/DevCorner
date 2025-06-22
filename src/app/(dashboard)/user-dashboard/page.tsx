@@ -8,7 +8,9 @@ export default async function UserHomePage () {
     if (!session) redirect('/sign-in')
     return (
         <div>
-            <ClientPage name = {session.user.name ?? "User" }/>
+            <ClientPage />
         </div>
     )
 }
+
+// name = {session.user.name ?? "User" }
