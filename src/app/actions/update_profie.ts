@@ -2,6 +2,8 @@
 "use server"
 import { db } from "@/lib/db";
 import * as z from "zod"
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 console.log(db);
 
@@ -19,9 +21,22 @@ const profileValidation = z.object({
   linkedin: z.string().url().optional(), 
 });
 
+const educationValidation = z.object({
+  istitution: z.string()
+    .min(1, {message: "Institution Name is Necesary"})
+    .max(100, {message: "Too Much long Name for the Instittuation"}),
+  course: z.string()
+    .min(1, {message: "Institution Name is Necesary"})
+    .max(100, {message: "Too Much long Name for the Instittuation"}),
+  startdate: z.string(),
+  enddate: z.string(),
+  activity: z.string()
+})
+
 // profile data
 type profileData = z.infer<typeof profileValidation>
-
+// edducational data
+type educationData = z.infer<typeof educationValidation>
 // getting the details of the use to show in the profileSection
 export async function getTheProfileInfo() {
     
@@ -53,6 +68,34 @@ export async function update_profile(input : profileData) {
     return updateUser;
 }
 
+// for updating the education
+export async function add_education(input: educationData) {
+    // validating the input
+    const validate = await educationValidation.safeParse(input);
+    if (!validate.success) throw new Error("Validation flied in the adding the education");
+    
+    // getting the sessions
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("No User Exists till now");
+
+    const user = await db.user.findUnique({
+      where: {email: session?.user.email},
+    })
+    if (!user) throw new Error(" Error in the finding the user i/e user is not exists");
+
+    // 
+     const newEducation = await db.education.create({
+    data: {
+      ...data,
+      userId: user.id,
+    },
+  })
+
+  return newEducation
+    
+    
+}
+
 // for updating the experience 
 export async function update_experience() {
 
@@ -63,10 +106,7 @@ export async function update_skills() {
 
 }
 
-// for updating the education
-export async function update_education() {
-    
-}
+
 
 // for updating the links 
 export async function update_contact() {

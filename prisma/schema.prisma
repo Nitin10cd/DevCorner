@@ -14,24 +14,26 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String       @unique
   password      String?
-  role          Role      @default(USER)
+  role          Role         @default(USER)
   image         String?
   emailVerified DateTime?
-  bio           String?   @default("Hello I am a passionate dev")
-  location      String?   @default("Delhi")
-  github        String?   @default("")
-  linkedin      String?   @default("")
-  website       String?   @default("")
+  bio           String?      @default("Hello I am a passionate dev")
+  location      String?      @default("Delhi")
+  github        String?      @default("")
+  linkedin      String?      @default("")
+  website       String?      @default("")
   accounts      Account[]
   sessions      Session[]
   skills        Skill[]
   projects      Project[]
   blogs         Blog[]
-  jobs          Job[]     @relation("RecruiterJobs")
+  education     Education[]
+  experience    Experience[]
+  jobs          Job[]        @relation("RecruiterJobs")
 }
 
 model Skill {
@@ -57,6 +59,28 @@ model Blog {
   tags    String[]
   userId  String
   user    User     @relation(fields: [userId], references: [id])
+}
+
+model Education {
+  id          String   @id @default(cuid())
+  institution String
+  course      String
+  startdate   String
+  enddate     String
+  activity    String[]
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Experience {
+  id           String   @id @default(cuid())
+  orgnaisation String
+  startdate    String
+  enddate      String
+  role         String
+  activity     String[]
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 model Job {
