@@ -13,7 +13,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Github, Linkedin, Globe, Pencil, Save } from "lucide-react"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { update_profile } from "@/app/actions/update_profie"
+import { update_profile } from "@/app/actions/update_profie";
+import { add_education } from "@/app/actions/update_profie"
 
 // --- Types ---
 type ProfileFormProps = {
@@ -31,9 +32,16 @@ type EducationFormProps = {
   course: string
   startdate: string
   enddate: string
-  activity: string
+  activity: string[]
 }
 
+type ExperienceProps = {
+  orgnaisation: string
+  role: string
+  startdate: string
+  enddate: string
+  activity: string[]
+}
 // --- Main Component ---
 export default function UserProfilePage() {
   const { data: session, status } = useSession()
@@ -61,9 +69,21 @@ export default function UserProfilePage() {
     course: "",
     startdate: "",
     enddate: "",
-    activity: "",
+    activity: [],
+  });
+
+  const [experience, setExperience] = useState<ExperienceProps[]>([]);
+  const [newExperienceForm, setNewExperienceForm] = useState<ExperienceProps>({
+    orgnaisation: "",
+    role: "",
+    startdate: "",
+    enddate: "",
+    activity: []
   })
-  const [eduEditMode, setEduEditMode] = useState(false)
+
+  const [eduEditMode, setEduEditMode] = useState(false);
+  const [expEditMode, setExpEditMode] = useState(false);
+
 
   // --- Profile Handlers ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -83,30 +103,42 @@ export default function UserProfilePage() {
     }
   }
 
+
+
   // --- Education Handlers ---
   const handleNewEduChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setNewEducationForm({ ...newEducationForm, [e.target.name]: e.target.value })
   }
 
-  const addEducation = () => {
-    if (
-      newEducationForm.institution &&
-      newEducationForm.course &&
-      newEducationForm.startdate &&
-      newEducationForm.enddate
-    ) {
-      setEducations([...educations, newEducationForm])
-      setNewEducationForm({
-        institution: "",
-        course: "",
-        startdate: "",
-        enddate: "",
-        activity: "",
-      })
-      setEduEditMode(false)
+  // --- Experience Handlers ---
+  const handleNewExpChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setNewExperienceForm({ ...newExperienceForm, [e.target.name]: e.target.value });
+  }
+
+  // --- Function for handling the EEducation add form ---
+  const addEducation = async () => {
+    if (newEducationForm.institution && newEducationForm.course && newEducationForm.startdate && newEducationForm.enddate) {
+      try {
+        await add_education(newEducationForm);
+        setEducations([...educations, newEducationForm]);
+        setNewEducationForm({
+          institution: "",
+          course: "",
+          startdate: "",
+          enddate: "",
+          activity: [""],
+        });
+        setEduEditMode(false);
+      } catch (error) {
+        console.error("Error adding education:", error);
+      }
     } else {
-      alert("Please fill all required fields")
+      alert("please fill all required fields")
     }
+  }
+
+  const addExperience = async () => {
+
   }
 
   return (
@@ -213,11 +245,87 @@ export default function UserProfilePage() {
               />
               <Textarea
                 name="activity"
-                placeholder="Clubs, Activities, Honors"
-                value={newEducationForm.activity}
-                onChange={handleNewEduChange}
+                placeholder="Clubs, Activities, Honors (comma separated)"
+                value={newEducationForm.activity.join(", ")} // show as comma string
+                onChange={(e) =>
+                  setNewEducationForm({
+                    ...newEducationForm,
+                    activity: e.target.value.split(",").map(s => s.trim()), // convert to array
+                  })
+                }
               />
+
+
               <Button onClick={addEducation}>Add Education</Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+      {/** EXPERIENCE FORM */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-xl">Experience</CardTitle>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setExpEditMode(!expEditMode)}
+          >
+            {expEditMode ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+          </Button>
+        </CardHeader>
+
+        <CardContent className="grid gap-4">
+          {experience.length === 0 && !expEditMode && (
+            <p className="text-sm text-muted-foreground">No experience added yet.</p>
+          )}
+
+          {experience.map((exp, index) => (
+            <div key={index} className="border rounded-md p-4 bg-muted/10 space-y-1">
+              <p className="font-medium">{exp.orgnaisation} — {exp.role}</p>
+              <p className="text-sm text-muted-foreground">{exp.startdate} to {exp.enddate}</p>
+              <p className="text-sm italic">{exp.activity.join(", ")}</p>
+            </div>
+          ))}
+
+          {expEditMode && (
+            <>
+              <Input
+                name="orgnaisation"
+                placeholder="Organisation"
+                value={newExperienceForm.orgnaisation}
+                onChange={handleNewExpChange}
+              />
+              <Input
+                name="role"
+                placeholder="Role"
+                value={newExperienceForm.role}
+                onChange={handleNewExpChange}
+              />
+              <Input
+                name="startdate"
+                placeholder="Start Date"
+                value={newExperienceForm.startdate}
+                onChange={handleNewExpChange}
+              />
+              <Input
+                name="enddate"
+                placeholder="End Date"
+                value={newExperienceForm.enddate}
+                onChange={handleNewExpChange}
+              />
+              <Textarea
+                name="activity"
+                placeholder="Clubs, Activities, Honors (comma separated)"
+                value={newEducationForm.activity.join(", ")} 
+                onChange={(e) =>
+                  setNewExperienceForm({
+                    ...newExperienceForm, 
+                    activity: e.target.value.split(",").map(s => s.trim()),
+                  })
+                }
+
+              />
+              <Button onClick={addExperience}>Add Experience</Button>
             </>
           )}
         </CardContent>
