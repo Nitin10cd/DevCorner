@@ -22,6 +22,13 @@ const profileValidation = z.object({
   linkedin: z.string().url().optional(),
 });
 
+const projectValidation = z.object({
+  title: z.string().min(1,{message: "Title Of Project Must be Exists"}).max(200,{message: "Title cant be too long"}),
+  repoUrl: z.string().min(1,{message: "Repo is must exist"}),
+  techTags: z.array(z.string()),
+})
+
+
 const educationValidation = z.object({
   institution: z.string()
     .min(1, { message: "Institution name is required" })
@@ -54,6 +61,8 @@ type profileData = z.infer<typeof profileValidation>
 type educationData = z.infer<typeof educationValidation>
 // experience data
 type experinceData = z.infer<typeof experienceValidation>
+// project data
+type projectData = z.infer<typeof projectValidation>
 
 
 
@@ -270,11 +279,11 @@ export async function delete_experience(id: string) {
 export async function add_skills(name: string ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
-
+  const userId = session.user
   const skills = await db.skill.create({
     data: {
       name,
-      userId: session.user.id,
+      userId:userId.id,
     }
   });
 
@@ -304,4 +313,29 @@ export async function delete_skill(skillId: string) {
       userId: session.user.id,
     },
   })
+}
+
+// -- PROJECT ADD, DELETE AND VIEW ACTION ---\\
+export async function add_project (data: projectData) {
+  const session = await getServerSession(authOptions);
+  if (session?.user) throw new Error("Unauthorized");
+
+  const validate = await projectValidation.safeParse(data);
+  if (!validate.success) throw new Error("Data not in correct formate");
+
+  const user = await db.user.findUnique({
+    where: {email: session?.user.email}
+  });
+  if (!user) {
+    throw new Error(" User does not exists");
+  }
+
+  const project = await db.project.create({
+    data: {
+      ...data,
+      userId: user.id,
+    }
+  })
+  return project;
+  
 }

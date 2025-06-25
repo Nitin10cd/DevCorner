@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Github, Linkedin, Globe, Pencil, Save } from "lucide-react"
+import { Github, Linkedin, Globe, Pencil, Save, PlusIcon, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { update_profile } from "@/app/actions/update_profie";
@@ -125,6 +125,29 @@ export default function UserProfilePage() {
 
   const [eduEditMode, setEduEditMode] = useState(false);
   const [expEditMode, setExpEditMode] = useState(false);
+
+  // -- SSKILLS States --- 
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [newSkill , setNewSkill] = useState<string>("");
+
+  async function fetchSkills() {
+    const data = await get_skills();
+    setSkills(data);
+  }
+  useEffect(() => {fetchSkills()}, []);
+
+
+  async function handleAddSkill() {
+    if (!newSkill?.trim()) return;
+    const skill = await add_skills(newSkill);
+    setSkills([...skills, skill]);;
+    setNewSkill("");
+  }
+
+    async function handleDeleteSkill(id: string) {
+    await delete_skill(id)
+    setSkills(skills.filter((s) => s.id !== id))
+  }
 
 
   // --- Profile Handlers ---
@@ -405,7 +428,51 @@ export default function UserProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Future: EXPERIENCE / SKILLS / PROJECTS SECTION */}
+      {/** SKILLS Section  */}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className=" text-xl "> Skills </CardTitle>
+          </CardHeader>
+          <CardContent className=" space-y-4">
+            <div className=" flex gap-2">
+              <Input
+              placeholder="Add a Skills"
+              value={newSkill}
+              onChange={(e) => setNewSkill(e.target.value)}
+              /> 
+              <Button onClick={ handleAddSkill }><PlusIcon/></Button>
+            </div>
+
+            {
+              skills.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No Skills Added Yet</p>
+              ) : (
+                 <div className="flex flex-wrap gap-2">
+            {skills.map((skill) => (
+              <div
+                key={skill.id}
+                className="flex items-center gap-2 border px-3 py-1 rounded-md bg-muted text-sm"
+              >
+                {skill.name}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4"
+                  onClick={() => handleDeleteSkill(skill.id)}
+                >
+                  <Trash2 className="h-3 w-3 text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
+              )
+            }
+
+          </CardContent>
+        </Card>
+
+      {/* PROJECTS SECTION */}
     </div>
   )
 }

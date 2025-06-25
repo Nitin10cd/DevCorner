@@ -83,6 +83,7 @@ model Experience {
   user         User     @relation(fields: [userId], references: [id])
 }
 
+
 model Job {
   id          String   @id @default(cuid())
   title       String
