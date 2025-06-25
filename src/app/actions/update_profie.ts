@@ -176,9 +176,17 @@ export async function get_education() {
 
   if (!user) throw new Error("User is unauthorized");
   const education = await db.education.findMany({
-    where: { userId: user.id },
-    orderBy: { startdate: "desc" }
-  });
+  where: { userId: user.id },
+  select: {
+    id: true,
+    institution: true,
+    course: true,
+    startdate: true,
+    enddate: true,
+    activity: true,
+  },
+});
+
 
   return education;
 }
@@ -197,9 +205,16 @@ export async function get_Experience() {
 
   if (!user) throw new Error("User is unauthorized");
   const experience = await db.experience.findMany({
-    where: { userId: user.id },
-    orderBy: { startdate: "desc" }
-  });
+  where: { userId: user.id },
+  select: {
+    id: true,
+    orgnaisation: true,
+    role: true,
+    startdate: true,
+    enddate: true,
+    activity: true,
+  },
+});
 
   return experience;
 }
@@ -249,14 +264,44 @@ export async function delete_experience(id: string) {
 // --- UPDATING THE EDUCATION ,  EXPERIENCE  PARTICULAR --
  
 
-// //  for updating the skills
-// export async function update_skills() {
+// -- SKILLS SECTION ACTIONS ---
 
-// }
+//  add the skills
+export async function add_skills(name: string ) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
 
+  const skills = await db.skill.create({
+    data: {
+      name,
+      userId: session.user.id,
+    }
+  });
 
+  return skills;
+  
+}
+// getting the skills 
+export async function get_skills () {
+  const session  = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
 
-// // for updating the links
-// export async function update_contact() {
+  const skills = await db.skill.findMany({
+    where: { userId: session.user.id },
+  })
 
-// }
+  return skills;
+
+}
+
+export async function delete_skill(skillId: string) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) throw new Error("Unauthorized")
+
+  await db.skill.delete({
+    where: {
+      id: skillId,
+      userId: session.user.id,
+    },
+  })
+}

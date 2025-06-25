@@ -11,10 +11,17 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Github, Linkedin, Globe, Pencil, Save } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { update_profile } from "@/app/actions/update_profie";
-import { add_education } from "@/app/actions/update_profie"
+import { add_education } from "@/app/actions/update_profie";
+import { add_experience } from "@/app/actions/update_profie"
+import { get_profile } from "@/app/actions/update_profie";
+import { get_education } from "@/app/actions/update_profie";
+import { get_Experience } from "@/app/actions/update_profie";
+import { Trash } from "lucide-react";
+import { get_skills , delete_skill , add_skills } from "@/app/actions/update_profie"
+
 
 // --- Types ---
 type ProfileFormProps = {
@@ -42,9 +49,44 @@ type ExperienceProps = {
   enddate: string
   activity: string[]
 }
+
+type Skill = {
+  id: string
+  name: string
+}
+
+
 // --- Main Component ---
 export default function UserProfilePage() {
-  const { data: session, status } = useSession()
+  const { data: session, status } = useSession();
+
+  // --- USE EFFECT FOR GETTING THE DATA FROM THE DATABASE WHILE RELOADING OR TRANSITION BETWEEN THE PAGE ---
+
+  const [profileFetchError, setProfileFetchError] = useState<boolean>(false);
+
+  // getting the fetche data
+  async function getFetched() {
+    try {
+      const profileData = await get_profile();
+      const educationData = await get_education();
+      const experienceData = await get_Experience();
+
+      if (profileData) setForm(profileData);
+      if (educationData) setEducations(educationData);
+      if (experienceData) setExperience(experienceData);
+
+    } catch (error) {
+      console.log("Error fetching:", error);
+      setProfileFetchError(true);
+    }
+  }
+
+
+  useEffect(() => {
+    getFetched();
+  }, []);
+
+
 
   if (status === "loading") return <div>Loading...</div>
   if (!session?.user) return <div>Unauthorized</div>
@@ -138,8 +180,38 @@ export default function UserProfilePage() {
   }
 
   const addExperience = async () => {
+  if (
+    newExperienceForm.orgnaisation &&
+    newExperienceForm.role &&
+    newExperienceForm.startdate &&
+    newExperienceForm.enddate
+  ) {
+    try {
+      await add_experience(newExperienceForm); // <-- backend function
+      setExperience([...experience, newExperienceForm]);
+      setNewExperienceForm({
+        orgnaisation: "",
+        role: "",
+        startdate: "",
+        enddate: "",
+        activity: [""],
+      });
+      setExpEditMode(false);
+    } catch (error) {
+      console.error("Error adding experience:", error);
+    }
+  } else {
+    alert("Please fill all required fields");
+  }
+};
+
+
+  // handling the delete operation for experiecnce and the education
+  const deleteExperience = () => {
 
   }
+
+  const deleteEducation = () => {}
 
   return (
     <div className="space-y-6 p-6">
@@ -213,7 +285,8 @@ export default function UserProfilePage() {
             <div key={index} className="border rounded-md p-4 bg-muted/10 space-y-1">
               <p className="font-medium">{edu.institution} — {edu.course}</p>
               <p className="text-sm text-muted-foreground">{edu.startdate} to {edu.enddate}</p>
-              <p className="text-sm italic">{edu.activity}</p>
+              <p className="text-sm italic">{edu.activity}</p> <br />
+              <Button className=" flex justify-center align-middle"> Delete Experience <Trash/> </Button>
             </div>
           ))}
 
@@ -283,7 +356,8 @@ export default function UserProfilePage() {
             <div key={index} className="border rounded-md p-4 bg-muted/10 space-y-1">
               <p className="font-medium">{exp.orgnaisation} — {exp.role}</p>
               <p className="text-sm text-muted-foreground">{exp.startdate} to {exp.enddate}</p>
-              <p className="text-sm italic">{exp.activity.join(", ")}</p>
+              <p className="text-sm italic">{exp.activity.join(", ")}</p> <br />
+              <Button className=" flex justify-center align-middle"> Delete Experience <Trash/> </Button>
             </div>
           ))}
 
@@ -315,16 +389,16 @@ export default function UserProfilePage() {
               />
               <Textarea
                 name="activity"
-                placeholder="Clubs, Activities, Honors (comma separated)"
-                value={newEducationForm.activity.join(", ")} 
+                placeholder="Responsibilities, achievements (comma separated)"
+                value={newExperienceForm.activity.join(", ")} // Corrected
                 onChange={(e) =>
                   setNewExperienceForm({
-                    ...newExperienceForm, 
+                    ...newExperienceForm,
                     activity: e.target.value.split(",").map(s => s.trim()),
                   })
                 }
-
               />
+
               <Button onClick={addExperience}>Add Experience</Button>
             </>
           )}
