@@ -13,14 +13,14 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Github, Linkedin, Globe, Pencil, Save, PlusIcon, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
-import { update_profile } from "@/app/actions/update_profie";
+import { add_project, get_projects, update_profile } from "@/app/actions/update_profie";
 import { add_education } from "@/app/actions/update_profie";
 import { add_experience } from "@/app/actions/update_profie"
 import { get_profile } from "@/app/actions/update_profie";
 import { get_education } from "@/app/actions/update_profie";
 import { get_Experience } from "@/app/actions/update_profie";
 import { Trash } from "lucide-react";
-import { get_skills , delete_skill , add_skills } from "@/app/actions/update_profie"
+import { get_skills, delete_skill, add_skills } from "@/app/actions/update_profie"
 
 
 // --- Types ---
@@ -54,6 +54,22 @@ type Skill = {
   id: string
   name: string
 }
+
+// This is what the DB returns or expects
+type Project = {
+  id?: string;
+  title: string;
+  repoUrl: string;
+  techTags: string[]; // always array
+};
+
+// For form input only (before converting techTags to array)
+type NewProject = {
+  title: string;
+  repoUrl: string;
+  techTags: string; 
+};
+
 
 
 // --- Main Component ---
@@ -126,15 +142,25 @@ export default function UserProfilePage() {
   const [eduEditMode, setEduEditMode] = useState(false);
   const [expEditMode, setExpEditMode] = useState(false);
 
-  // -- SSKILLS States --- 
+  // -- SKILLS States --- 
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [newSkill , setNewSkill] = useState<string>("");
+  const [newSkill, setNewSkill] = useState<string>("");
+
+  // -- Project Section --
+const [projects, setProjects] = useState<Project[]>([]);
+const [newProject, setNewProject] = useState<NewProject>({
+  title: "",
+  repoUrl: "",
+  techTags: "",
+});
+
+  const [projEditMode, setProjEditMode] = useState(false);
 
   async function fetchSkills() {
     const data = await get_skills();
     setSkills(data);
   }
-  useEffect(() => {fetchSkills()}, []);
+  useEffect(() => { fetchSkills() }, []);
 
 
   async function handleAddSkill() {
@@ -144,7 +170,7 @@ export default function UserProfilePage() {
     setNewSkill("");
   }
 
-    async function handleDeleteSkill(id: string) {
+  async function handleDeleteSkill(id: string) {
     await delete_skill(id)
     setSkills(skills.filter((s) => s.id !== id))
   }
@@ -203,30 +229,30 @@ export default function UserProfilePage() {
   }
 
   const addExperience = async () => {
-  if (
-    newExperienceForm.orgnaisation &&
-    newExperienceForm.role &&
-    newExperienceForm.startdate &&
-    newExperienceForm.enddate
-  ) {
-    try {
-      await add_experience(newExperienceForm); // <-- backend function
-      setExperience([...experience, newExperienceForm]);
-      setNewExperienceForm({
-        orgnaisation: "",
-        role: "",
-        startdate: "",
-        enddate: "",
-        activity: [""],
-      });
-      setExpEditMode(false);
-    } catch (error) {
-      console.error("Error adding experience:", error);
+    if (
+      newExperienceForm.orgnaisation &&
+      newExperienceForm.role &&
+      newExperienceForm.startdate &&
+      newExperienceForm.enddate
+    ) {
+      try {
+        await add_experience(newExperienceForm); // <-- backend function
+        setExperience([...experience, newExperienceForm]);
+        setNewExperienceForm({
+          orgnaisation: "",
+          role: "",
+          startdate: "",
+          enddate: "",
+          activity: [""],
+        });
+        setExpEditMode(false);
+      } catch (error) {
+        console.error("Error adding experience:", error);
+      }
+    } else {
+      alert("Please fill all required fields");
     }
-  } else {
-    alert("Please fill all required fields");
-  }
-};
+  };
 
 
   // handling the delete operation for experiecnce and the education
@@ -234,7 +260,40 @@ export default function UserProfilePage() {
 
   }
 
-  const deleteEducation = () => {}
+  const deleteEducation = () => { }
+
+  // -- HANDLERS OF THE PROJECT --
+  const handleProjectInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewProject({ ...newProject, [e.target.name]: e.target.value });
+  };
+
+const handleAddProject = async () => {
+  if (!newProject.title || !newProject.repoUrl) return;
+
+  try {
+    const added = await add_project({
+      title: newProject.title,
+      repoUrl: newProject.repoUrl,
+      techTags: newProject.techTags.split(",").map((tag) => tag.trim()), // convert to array
+    });
+
+    setProjects((prev) => [...prev, added]);
+    setNewProject({ title: "", repoUrl: "", techTags: "" });
+    setProjEditMode(false);
+
+  } catch (error) {
+    console.error("Failed to add project:", error);
+  }
+};
+
+  const fetchProjects = async () => {
+    const p = await get_projects();
+    setProjects(p);
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   return (
     <div className="space-y-6 p-6">
@@ -309,7 +368,7 @@ export default function UserProfilePage() {
               <p className="font-medium">{edu.institution} — {edu.course}</p>
               <p className="text-sm text-muted-foreground">{edu.startdate} to {edu.enddate}</p>
               <p className="text-sm italic">{edu.activity}</p> <br />
-              <Button className=" flex justify-center align-middle"> Delete Experience <Trash/> </Button>
+              <Button className=" flex justify-center align-middle"> Delete Experience <Trash /> </Button>
             </div>
           ))}
 
@@ -380,7 +439,7 @@ export default function UserProfilePage() {
               <p className="font-medium">{exp.orgnaisation} — {exp.role}</p>
               <p className="text-sm text-muted-foreground">{exp.startdate} to {exp.enddate}</p>
               <p className="text-sm italic">{exp.activity.join(", ")}</p> <br />
-              <Button className=" flex justify-center align-middle"> Delete Experience <Trash/> </Button>
+              <Button className=" flex justify-center align-middle"> Delete Experience <Trash /> </Button>
             </div>
           ))}
 
@@ -430,49 +489,108 @@ export default function UserProfilePage() {
 
       {/** SKILLS Section  */}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className=" text-xl "> Skills </CardTitle>
-          </CardHeader>
-          <CardContent className=" space-y-4">
-            <div className=" flex gap-2">
-              <Input
+      <Card>
+        <CardHeader>
+          <CardTitle className=" text-xl "> Skills </CardTitle>
+        </CardHeader>
+        <CardContent className=" space-y-4">
+          <div className=" flex gap-2">
+            <Input
               placeholder="Add a Skills"
               value={newSkill}
               onChange={(e) => setNewSkill(e.target.value)}
-              /> 
-              <Button onClick={ handleAddSkill }><PlusIcon/></Button>
-            </div>
-
-            {
-              skills.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No Skills Added Yet</p>
-              ) : (
-                 <div className="flex flex-wrap gap-2">
-            {skills.map((skill) => (
-              <div
-                key={skill.id}
-                className="flex items-center gap-2 border px-3 py-1 rounded-md bg-muted text-sm"
-              >
-                {skill.name}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-4 w-4"
-                  onClick={() => handleDeleteSkill(skill.id)}
-                >
-                  <Trash2 className="h-3 w-3 text-red-500" />
-                </Button>
-              </div>
-            ))}
+            />
+            <Button onClick={handleAddSkill}><PlusIcon /></Button>
           </div>
-              )
-            }
 
-          </CardContent>
-        </Card>
+          {
+            skills.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No Skills Added Yet</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {skills.map((skill) => (
+                  <div
+                    key={skill.id}
+                    className="flex items-center gap-2 border px-3 py-1 rounded-md bg-muted text-sm"
+                  >
+                    {skill.name}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4"
+                      onClick={() => handleDeleteSkill(skill.id)}
+                    >
+                      <Trash2 className="h-3 w-3 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )
+          }
+
+        </CardContent>
+      </Card>
 
       {/* PROJECTS SECTION */}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-xl">Projects</CardTitle>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setProjEditMode(!projEditMode)}
+        >
+          {projEditMode ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+        </Button>
+      </CardHeader>
+
+      <CardContent className="grid gap-4">
+        {projects.length === 0 && !projEditMode && (
+          <p className="text-sm text-muted-foreground">No projects added yet.</p>
+        )}
+
+        {projects.map((project) => (
+          <div key={project.id} className="border rounded-md p-4 bg-muted/10">
+            <p className="font-medium text-lg">{project.title}</p>
+            <p className="text-sm text-blue-600">
+              <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
+                {project.repoUrl}
+              </a>
+            </p>
+            <p className="text-xs mt-2">Tags: {project.techTags.join(", ")}</p>
+          </div>
+        ))}
+
+        {projEditMode && (
+          <div className="space-y-2">
+            <Input
+              name="title"
+              value={newProject.title}
+              onChange={handleProjectInput}
+              placeholder="Project Title"
+            />
+            <Input
+              name="repoUrl"
+              value={newProject.repoUrl}
+              onChange={handleProjectInput}
+              placeholder="Repository URL"
+            />
+            <Input
+              name="techTags"
+              value={newProject.techTags}
+              onChange={handleProjectInput}
+              placeholder="Tech Tags (comma separated)"
+            />
+            <Button onClick={handleAddProject}>
+              <PlusIcon className="h-4 w-4 mr-2" /> Add Project
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+
+
     </div>
   )
 }

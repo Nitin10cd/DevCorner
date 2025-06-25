@@ -318,7 +318,7 @@ export async function delete_skill(skillId: string) {
 // -- PROJECT ADD, DELETE AND VIEW ACTION ---\\
 export async function add_project (data: projectData) {
   const session = await getServerSession(authOptions);
-  if (session?.user) throw new Error("Unauthorized");
+  if (!session?.user) throw new Error("Unauthorized");
 
   const validate = await projectValidation.safeParse(data);
   if (!validate.success) throw new Error("Data not in correct formate");
@@ -337,5 +337,31 @@ export async function add_project (data: projectData) {
     }
   })
   return project;
-  
 }
+
+// action for the deleting the project
+export async function delete_project (projectId: string) {
+  const session = await getServerSession(authOptions);
+  if(!session?.user) throw new Error("Unauthorized")
+   await db.project.delete({
+    where: {id: projectId, userId: session.user.id}
+  })
+};
+
+//  getting action for getting the user
+export async function get_projects() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) throw new Error("Unauthorized")
+
+  const projects = await db.project.findMany({
+    where: { userId: session.user.id },
+    select: {
+      id: true,
+      title: true,
+      repoUrl: true,
+      techTags: true
+    }
+  })
+  return projects
+}
+
