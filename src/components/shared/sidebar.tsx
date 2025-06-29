@@ -1,5 +1,6 @@
-"use client"
-import { useSidebar } from "@/context/SidebarContext"
+"use client";
+import { useEffect } from "react";
+import { useSidebar } from "@/context/SidebarContext";
 import {
   Home,
   Inbox,
@@ -12,15 +13,18 @@ import {
   Users as GroupIcon,
   FileText,
   User2Icon,
-} from "lucide-react"
+} from "lucide-react";
 
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+
 import {
   Sidebar,
   SidebarContent,
@@ -31,29 +35,38 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 const items = [
-  { title: "Home", url: "/user-dashboard/home", icon: Home },
-  { title: "Profile", url: "/user-dashboard/home", icon: User2Icon },
-  { title: "Messages", url: "/user-dashboard/inbox", icon: Inbox },
-  { title: "Jobs", url: "/user-dashboard/search", icon: Search },
-  { title: "Blogs", url: "/user-dashboard/blogs", icon: FileText },
-  { title: "Projects Added", url: "/user-dashboard/projects", icon: ComputerIcon },
-  { title: "Connections", url: "/user-dashboard/connections", icon: GroupIcon },
-  { title: "Notifications", url: "/user-dashboard/notifications", icon: BellIcon },
-  { title: "Settings", url: "/user-dashboard/settings", icon: Settings },
-]
+  { title: "Home", state : "home", icon: Home },
+  { title: "Profile",  state : "profile", icon: User2Icon },
+  { title: "Messages", state : "messages", icon: Inbox },
+  { title: "Jobs", state : "jobs", icon: Search },
+  { title: "Blogs",  state : "blog", icon: FileText },
+  { title: "Projects Showcase",  state : "projects", icon: ComputerIcon },
+  { title: "Connections", state : "connections", icon: GroupIcon },
+  { title: "Notifications",  state : "notification", icon: BellIcon },
+  { title: "Settings",  state : "setting", icon: Settings },
+];
+
+
 
 export function AppSidebar() {
   const pathname = usePathname();
-  // context values
-  const {activeState , setActiveState} = useSidebar();
+  const router = useRouter();
+  const { data: session } = useSession();
+  const { activeState, setActiveState } = useSidebar();
 
-  const changeState = (prop:string) => {
-    setActiveState(prop);
-    console.log("Active State: ", activeState)
-  }
+  const changeState = (title: string, state: string) => {
+    setActiveState(state);
+  };
+
+  useEffect(() => {
+   if (activeState === "jobs") {
+    router.push('/jobs');
+   }
+  }, [activeState])
+  
 
   return (
     <Sidebar className="bg-gradient-to-b from-white to-gray-50 border-r border-gray-200 text-gray-900 shadow-sm">
@@ -66,11 +79,12 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1 px-2">
               {items.map((item) => {
-                const isActive = pathname.startsWith(item.url)
+                const isActive = pathname.startsWith(item.state);
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <p onClick={() => changeState(item.title)}
+                      <p
+                        onClick={() => changeState(item.title, item.state)}
                         className={`flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-200 text-base font-semibold ${
                           isActive
                             ? "bg-blue-100 text-blue-700"
@@ -82,7 +96,7 @@ export function AppSidebar() {
                       </p>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                )
+                );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -97,7 +111,9 @@ export function AppSidebar() {
                 <SidebarMenuButton className="w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700">
                   <div className="flex items-center gap-3">
                     <User2 className="w-6 h-6" />
-                    <span className="text-base font-medium">Username</span>
+                    <span className="text-base font-medium">
+                      {session?.user?.name ?? "Username"}
+                    </span>
                   </div>
                   <ChevronUp className="w-4 h-4" />
                 </SidebarMenuButton>
@@ -112,7 +128,10 @@ export function AppSidebar() {
                 <DropdownMenuItem className="cursor-pointer hover:bg-gray-100 px-4 py-2 text-sm">
                   Billing
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer hover:bg-gray-100 px-4 py-2 text-sm text-red-500">
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="cursor-pointer hover:bg-gray-100 px-4 py-2 text-sm text-red-500"
+                >
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -121,5 +140,5 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

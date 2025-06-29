@@ -10,7 +10,7 @@ export default function ClientPage() {
   const { data: session, status } = useSession();
   const { activeState } = useSidebar();
   const router = useRouter();
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "authenticated" && session?.user?.role) {
@@ -19,26 +19,30 @@ export default function ClientPage() {
   }, [status, session]);
 
   useEffect(() => {
-    if (role === "USER" && activeState === "blog") {
+    if ((role === "USER" || role === "RECRUITER") && activeState === "blog") {
       router.push("/blog");
+    }
+    else if ((role === "USER" || role === "RECRUITER") && activeState === "jobs") {
+      router.push("/jobs");
+    }
+     else if ((role === "USER" || role === "RECRUITER") && activeState === "projects") {
+      router.push("/projects");
+    }
+     else if ((role === "USER" || role === "RECRUITER") && activeState === "connections") {
+      router.push("/connections");
+    }
+     else if ((role === "USER" || role === "RECRUITER") && activeState === "setting") {
+      router.push("/settings");
     }
   }, [role, activeState, router]);
 
+  // --- Handle Loading ---
   if (status === "loading") return <p>Loading...</p>;
 
+  // --- If Not Logged In ---
   if (!session) return <p>Please log in to continue.</p>;
 
-  if (role !== "USER") return <p>You are not authorized to access this content.</p>;
-
-  if (activeState === "blog") return null;
-
-  return (
-    <>
-      {activeState === "Profile" ? (
-        <UserProfilePage />
-      ) : (
-        <p>Hello Another Page</p>
-      )}
-    </>
-  );
+  // --- If Unauthorized ---
+  if (role !== "USER" && role !== "RECRUITER") return <p>You are not authorized to access this content.</p>;
+  return <UserProfilePage/>
 }

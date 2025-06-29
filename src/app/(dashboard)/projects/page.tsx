@@ -5,8 +5,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-
-export default function BlogPage() {
+export default function Projects() {
     const { data: session, status } = useSession();
     const { activeState } = useSidebar();
     const router = useRouter();
@@ -19,15 +18,15 @@ export default function BlogPage() {
     }, [status, session]);
 
     useEffect(() => {
-        if ((role === "USER" || role === "RECRUITER") && activeState === "jobs") {
-            router.push("/jobs");
+        if ((role === "USER" || role === "RECRUITER") && activeState === "blog") {
+            router.push("/blog");
         }
         else if ((role === "USER" || role === "RECRUITER") && activeState === "profile") {
             if (role === "USER") router.push('/user-dashboard');
             else router.push('/recruiter-dashboard')
         }
-        else if ((role === "USER" || role === "RECRUITER") && activeState === "projects") {
-            router.push("/projects");
+        else if ((role === "USER" || role === "RECRUITER") && activeState === "jobs") {
+            router.push("/jobs");
         }
         else if ((role === "USER" || role === "RECRUITER") && activeState === "connections") {
             router.push("/connections");
@@ -42,10 +41,7 @@ export default function BlogPage() {
 
     // --- If Not Logged In ---
     if (!session) return <p>Please log in to continue.</p>;
-
     return (
-        <>
-            hello blog page hai ye
-        </>
+        <> Projects Page </>
     )
 }
