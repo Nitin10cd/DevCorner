@@ -13,6 +13,27 @@ const commentSchema = z.object({
 // type allocation
 type commentData = z.infer<typeof commentSchema>
 
+export async function getAllBlogs() {
+    const session = await getServerSession(authOptions);
+    const responseFormat = { success: false, message: "Unauthorized User" };
+
+    if (!session) return responseFormat;
+    try {
+        const allBlogs = await db.blog.findMany({
+            orderBy: { createdAt: "desc" },
+            include: { supports: true, comments: true }
+        });
+
+        return {
+            success: true,
+            message: "Blogs fetched successfully",
+            data: allBlogs,
+        };
+    } catch (error) {
+        return { success: false, message: "Find the blog for the User", error };
+    }
+}
+
 export async function getUserBlogs() {
     const session = await getServerSession(authOptions);
     const responseFormat = { success: false, message: "Unauthorized User", data: [] };
@@ -41,32 +62,24 @@ export async function getUserBlogs() {
 }
 
 // action for adding the comments
-export async function addComment(input: commentData) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) return { success: false, message: "User is Not Exists" };
+export async function addComment(blogId: string, content: string) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) return { success: false, message: "Not logged in" }
 
-    const validate = await commentSchema.safeParse(input);
-    if (!validate.success) {
-        throw new Error(JSON.stringify(validate.error.format()));
-    }
+    const user = await db.user.findUnique({ where: { email: session.user.email } })
+    if (!user) return { success: false, message: "User not found" }
 
-    const { blogId, content } = validate.data;
-    try {
-        const comment = await db.comment.create({
-            data: {
-                content,
-                blogId,
-                userId: session.user.id
-            },
-            include: {
-                user: true
-            }
-        });
-        return { success: true, data: comment };
-    } catch (error) {
-        if (!session?.user) return { success: false, message: "Error in adding the comment", error };
-    }
+    const comment = await db.comment.create({
+        data: {
+            content,
+            blogId,
+            userId: user.id,
+        },
+    })
+
+    return { success: true, message: "Comment added", data: comment }
 }
+
 
 // toggle for the support 
 export async function toggleBlogSupport(blogId: string) {
@@ -85,9 +98,9 @@ export async function toggleBlogSupport(blogId: string) {
         });
 
         if (existing) {
-            await db.support.delete({where: {id: existing.id}});
-            return {success: true , supported: false};
-        }else {
+            await db.support.delete({ where: { id: existing.id } });
+            return { success: true, supported: false };
+        } else {
             await db.support.create({
                 data: {
                     userId: session.user.id,
@@ -97,7 +110,32 @@ export async function toggleBlogSupport(blogId: string) {
             return { success: true, supported: true };
         }
     } catch (error) {
-         return { success: false, message: "Support toggle failed" };
+        return { success: false, message: "Support toggle failed", error };
+    }
+}
+
+// logic for the delete blog
+export async function deleteBlog(blogId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, message: "Not Able to delete the Blog" };
+
+    try {
+        const blog = await db.blog.findUnique({
+            where: { id: blogId },
+        });
+        if (!blog) return { success: false, message: "Blog is Not Found" };
+
+
+        if (blog.userId !== session.user.id) {
+            return { success: false, message: "Not authorized to delete this blog" };
+        }
+        await db.blog.delete({
+            where: { id: blogId },
+        });
+
+        return { success: true, message: "Blog deleted successfully" };
+    } catch (error) {
+        return {success: false , message: "Error in deleting the blog "}
     }
 }
 
