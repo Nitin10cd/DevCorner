@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 @tailwind utilities;
 
+html {
+  @apply bg-background text-foreground;
+}
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

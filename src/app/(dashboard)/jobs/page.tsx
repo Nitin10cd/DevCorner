@@ -4,6 +4,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import PostForm from "../post/components/PostForm";
 
 
 export default function JobPage() {
@@ -43,6 +44,6 @@ export default function JobPage() {
     // --- If Not Logged In ---
     if (!session) return <p>Please log in to continue.</p>;
     return (<>
-        Job Page
+       <PostForm/>
     </>)
 }

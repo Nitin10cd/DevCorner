@@ -88,16 +88,20 @@ model Comment {
 }
 
 model Post {
-  id        String     @id @default(cuid())
-  content   String
-  image     String?
-  createdAt DateTime   @default(now())
+  id         String     @id @default(cuid())
+  content    String
+  createdAt  DateTime   @default(now())
 
-  user      User       @relation(fields: [userId], references: [id])
-  userId    String
+  // File/media support (optional, can be multiple)
+  imageUrl   String?
+  videoUrl   String?
+  pdfUrl     String?
 
-  comments  Comment[]
-  supports  Support[]
+  user       User       @relation(fields: [userId], references: [id])
+  userId     String
+
+  comments   Comment[]
+  supports   Support[]
 }
 
 
